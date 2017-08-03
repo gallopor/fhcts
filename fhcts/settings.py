@@ -37,8 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    'ctfm'
+    'ctfm',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -57,7 +56,7 @@ ROOT_URLCONF = 'fhcts.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR + '/ctfm/www/template'],
+        'DIRS': [os.path.join(BASE_DIR, 'ctfm', 'www', 'template'),], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
