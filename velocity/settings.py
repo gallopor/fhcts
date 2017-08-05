@@ -8,8 +8,8 @@ import os
 
 VELOCITY_DIR = os.path.dirname(os.path.abspath(__file__))
 
-#VELOCITY_IP = '192.168.1.21'
-VELOCITY_IP = '10.23.155.231'
+VELOCITY_IP = '192.168.1.21'
+#VELOCITY_IP = '10.23.155.231'
 DAEMON_USER = 'daemon'
 DAEMON_PSWD = 'Spirent'
 REFRESH_INTERVAL = 60
@@ -51,8 +51,8 @@ EXECUTION_QUEUE = {
     ],
 }
 #NOTIFICATION_URL = 'http://10.39.183.240:80/ctfm/notification/'
-NOTIFICATION_URL = 'http://10.23.155.223:80/ctfm/notification/'
-#NOTIFICATION_URL = 'http://192.168.1.8:80/ctfm/notification/'
+#NOTIFICATION_URL = 'http://10.23.155.223:80/ctfm/notification/'
+NOTIFICATION_URL = 'http://192.168.1.8:80/ctfm/notification/'
 #NOTIFICATION_URL = 'http://10.23.155.251:80/ctfm/notification/'
 RESOURCE_CATEGORY = ['STC']
 

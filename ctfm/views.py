@@ -9,6 +9,8 @@ from velocity.execution import Execution
 from velocity.settings import VELOCITY_IP, PIPELINE_SCRIPTS, \
         PIPELINE_PARAMS, NOTIFICATION_URL
 
+from ctfm.models import Order, Task
+
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
 if os.path.isdir(LOG_DIR) == False:
     os.mkdir(LOG_DIR)
@@ -135,6 +137,13 @@ def task_exec(request):
     pipeline = request.POST['pipeline']
     blade = request.POST['blade']
     codes = json.loads(request.POST['codes'])
+    
+    ''' 添加数据到Task表单 '''
+    for c in codes.values():
+        Task.objects.create(part_sn = c, \
+                            model = blade, \
+                            order_id = c[0:5], \
+                            resv_id = resv_id)
 
     script = PIPELINE_SCRIPTS[pipeline]
     params = PIPELINE_PARAMS[pipeline]
@@ -154,11 +163,12 @@ def task_exec(request):
     if('executionID' in ex_info):
         ret['status'] = True
         ret['id'] = ex_info['executionID']
-        exec_log = os.path.join(LOG_DIR, ret['id'])
-        fp = open(exec_log, 'w')
-        json.dump({'blade': blade, 'codes': codes}, fp)
-        fp.flush()
-        fp.close()
+        
+        ''' 更新Task表单数据 '''
+        for c in codes.values():
+            t = Task.objects.get(part_sn = c)
+            t.exec_id = ex_info['executionID']
+            t.save()                
     else:
         ret['status'] = False
         ret['msg'] = ex_info['errorId']
