@@ -3,9 +3,9 @@ from django.db import models
 # Create your models here.
 class Order(models.Model):
     ''' 表的结构 '''
-    id = models.IntegerField(primary_key=True)                  # 订单号
+    id = models.CharField(max_length=16, primary_key=True)      # 订单号
     model = models.CharField(max_length=16)                     # 产品型号
-    count = models.IntegerField(null=True)                               # 数量
+    count = models.IntegerField(null=True)                      # 数量
     status = models.CharField(max_length=16, default='')        # 订单状态
     hw_version = models.CharField(max_length=16, default='')    # 硬件版本
     hw_update_time = models.IntegerField(null=True)             # 硬件版本更新时间
@@ -14,8 +14,7 @@ class Order(models.Model):
     
 class Task(models.Model):
     ''' 表的结构 '''
-    part_sn = models.IntegerField(primary_key=True)             # 产品序列号
-    order_id = models.IntegerField()                            # 订单号
+    part_sn = models.CharField(max_length=16, primary_key=True) # 产品序列号
     model = models.CharField(max_length=16)                     # 产品型号
     resv_id = models.CharField(max_length=64, default='')       # 资源预约识别号
     exec_id = models.CharField(max_length=64, default='')       # 任务执行识别号
@@ -42,8 +41,7 @@ if __name__ == "__main__":
 #     while i < 10:
 #         sn = str(init + i)
 #         Task.objects.create(part_sn = sn, \
-#                             model = '2201110R1A', \
-#                             order_id = 11111)
+#                             model = '2201110R1A')
 #  
 #         i += 1           
 

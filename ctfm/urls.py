@@ -16,7 +16,7 @@ from django.conf.urls import url
 
 from ctfm.views import auth, login, index, dashboard, testing, \
         get_process, get_schedule, get_utilization, get_results, \
-        reserve, task_exec, exec_status, notification
+        get_reservations, reserve, task_exec, exec_status, notification
 
 urlpatterns = [
     url(r'^index/$', index),
@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^auth/$', auth),
     url(r'^notification/$', notification),
     url(r'^reserve/$', reserve),
+    url(r'^reserved/$', get_reservations),
     url(r'^taskExec/$', task_exec),
     url(r'^execStatus/$', exec_status)
 ]

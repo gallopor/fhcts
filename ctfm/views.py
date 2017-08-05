@@ -1,19 +1,14 @@
-import os
 import json
 from django.shortcuts import render_to_response
 from django.http import HttpResponse
+
+from ctfm.models import Task
 
 from velocity.velsession import VelSession
 from velocity.reservation import Reservation
 from velocity.execution import Execution
 from velocity.settings import VELOCITY_IP, PIPELINE_SCRIPTS, \
         PIPELINE_PARAMS, NOTIFICATION_URL
-
-from ctfm.models import Order, Task
-
-LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
-if os.path.isdir(LOG_DIR) == False:
-    os.mkdir(LOG_DIR)
 
 def index(request):
     return render_to_response('index.html')
@@ -38,7 +33,14 @@ def get_utilization(request):
 
 def get_results(request):
     resv_id = request.POST['resv_id']
-    return render_to_response('data/result_debug.json')
+    results = {}
+    ''' 在Task表单中查询执行状态 '''
+    for t in Task.objects.filter(resv_id = resv_id):
+        item =  {t.part_sn: {'status': t.exec_status, \
+                             'start_time': t.start_time, \
+                             'duration': t.duration}}
+        results.update(item) 
+    return HttpResponse(json.dumps(results))
 
 def auth(request):
     user = request.POST['user']
@@ -62,8 +64,20 @@ def reserve(request):
         ret['msg'] = r_info['errorId']
     return HttpResponse(json.dumps(ret))
 
+def get_reservations(request):
+    token = request.POST['token']
+    vs = VelSession(host=VELOCITY_IP, token=token)
+    rsv = Reservation(vs)
+    
+    ret = {'resv_id': ''}
+    rsv_info = rsv.getActResvByMe()
+    if rsv_info['total'] > 0:
+        ret['resv_id'] = rsv_info['reservations'][0]['id']
+    return HttpResponse(json.dumps(ret))
+
 def notification(request):
     notif = json.loads(request.body.decode())
+    print(notif)
     events = {
         'EXECUTION_START' : start,
         'EXECUTION_ISSUE' : wait,
@@ -74,62 +88,24 @@ def notification(request):
 
 def start(notif):
     exec_id = notif['executionID']
-    exec_log = os.path.join(LOG_DIR, exec_id)
-    exec_info = {
-        'reportID': notif['reportID'],
-        'status': 'STARTED',
-        'start': notif['executionStart']
-    }
-    if os.path.exists(exec_log):
-        fp = open(exec_log, 'r+')
-        log_content = json.loads(fp.read())
-        log_content.update(exec_info)
-        fp.seek(0)
-        json.dump(log_content, fp)
-        fp.flush()
-        fp.close()
+    ''' 更新Task表单数据 '''
+    for t in Task.objects.filter(exec_id = exec_id):
+        t.exec_status = 'STARTED'
+        t.start_time = notif['executionStart']
+        t.save()                
     return
 
 def end(notif):
     exec_id = notif['executionID']
-    exec_log = os.path.join(LOG_DIR, exec_id)
-    exec_info = {
-        'status': notif['executionStatus'],
-        'end': notif['executionEnd'],
-        'duration': notif['duration']
-    }
-    if os.path.exists(exec_log):
-        fp = open(exec_log, 'r+')
-        log_content = json.loads(fp.read())
-        log_content.update(exec_info)
-        fp.seek(0)
-        json.dump(log_content, fp)
-        fp.flush()
-        fp.close()
-        
-        resultsDump(log_content)
+    ''' 更新Task表单数据 '''
+    for t in Task.objects.filter(exec_id = exec_id):
+        t.exec_status = notif['executionStatus']
+        t.duration = notif['duration']
+        t.save() 
     return
 
 def wait(notif):
     pass
-
-def resultsDump(log):
-    fp = open('ctfm/template/data/result_debug.json', 'r+')
-    rj = json.loads(fp.read())
-    
-    log.pop('blade')
-    codes = log.pop('codes').values()
-    
-    order = None
-    for c in codes:
-        if order is None:
-            order = c[0:5]
-        rj['tasks'][order]['blades'][c] = log
-    fp.seek(0)
-    json.dump(rj, fp, indent=4)
-    fp.flush()
-    fp.close()
-    return
 
 def task_exec(request):
     token = request.POST['token']
@@ -137,12 +113,11 @@ def task_exec(request):
     pipeline = request.POST['pipeline']
     blade = request.POST['blade']
     codes = json.loads(request.POST['codes'])
-    
+
     ''' 添加数据到Task表单 '''
     for c in codes.values():
         Task.objects.create(part_sn = c, \
                             model = blade, \
-                            order_id = c[0:5], \
                             resv_id = resv_id)
 
     script = PIPELINE_SCRIPTS[pipeline]
@@ -176,7 +151,8 @@ def task_exec(request):
 
 def exec_status(request):
     exec_id = request.POST['exec_id']
-    if os.path.exists(os.path.join(LOG_DIR, exec_id)):
-        fp = open(os.path.join(LOG_DIR, exec_id), 'r')
-        print(fp.read())
-    return render_to_response(os.path.join(LOG_DIR, exec_id))
+    es = {'status': ''}
+    ''' 在Task表单中查询执行状态 '''
+    t = Task.objects.filter(exec_id = exec_id)[0]
+    es['status'] = t.exec_status
+    return HttpResponse(json.dumps(es))
